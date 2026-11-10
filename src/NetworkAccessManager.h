@@ -10,6 +10,8 @@ class NetworkAccessManager : public QNetworkAccessManager {
   Q_OBJECT
 
   public:
+    // Internal request marker; not an HTTP header. Source is not navigation.
+    enum { SourceRequestAttribute = QNetworkRequest::User + 1 };
     NetworkAccessManager(QObject *parent = 0);
     void addHeader(QString key, QString value);
     void reset();

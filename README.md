@@ -47,3 +47,35 @@ may be redistributed under the terms specified in the LICENSE file.
  [2]: https://github.com/thoughtbot/capybara-webkit/pull/171
  [3]: https://github.com/thoughtbot/capybara-webkit/pull/170
  [4]: https://github.com/niklasb/dryscrape
+## DOM and UTF-8 regressions
+
+`SetHtml` now marks the frame as HTML and clears its previous raw response body,
+so `Body` serializes the current DOM in fresh sessions and after XML navigation.
+HTTP non-HTML bodies retain their existing raw-response behavior. `Source` is
+unchanged: it fetches the current URL again; it is not a cached original source
+or an alias for the DOM. An empty HTML input still produces an empty HTML DOM.
+
+Command arguments are now UTF-8 encoded before their byte length is written to
+the socket. This fixes multi-byte input leaving trailing bytes in the protocol.
+The server response framing remains unchanged.
+
+Run `tests/test_dom_regressions.py` under Xvfb with the local Python module and
+compiled executable (named `webkit_server` beside `webkit_server.py`) on
+PYTHONPATH. The tests contact only their own loopback HTTP fixture and start/kill
+a fresh WebKit per integration test. Qt5 WebKit is required. The Python framing
+test itself does not require a browser. No production dependency updates or
+package publication are part of this change.
+
+
+### Source does not replace document metadata
+
+Source GETs are tagged with an internal QNetworkRequest attribute (not an HTTP
+header). Their replies no longer emit the navigation metadata update signal or
+modify navigation redirect mappings. They still use the shared network manager,
+including its headers, cookies, authentication and proxy configuration; Source
+still performs a fresh request and is not a cached original document.
+
+Regression coverage includes repeated Source on about:blank after SetHtml,
+Source fetching XML for an in-memory HTML document, and a URL whose second
+response changes status/content type. Body and document response metadata must
+remain unchanged; ordinary subsequent navigation must still update them.

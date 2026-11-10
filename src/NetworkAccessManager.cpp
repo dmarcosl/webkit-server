@@ -32,6 +32,10 @@ QNetworkReply* NetworkAccessManager::createRequest(QNetworkAccessManager::Operat
 };
 
 void NetworkAccessManager::finished(QNetworkReply *reply) {
+  // Source shares cookies, authentication and headers, but its response must
+  // not overwrite frame body/status/contentType or navigation redirect mappings.
+  if (reply->request().attribute(static_cast<QNetworkRequest::Attribute>(SourceRequestAttribute)).toBool())
+    return;
   QUrl redirectUrl = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
   if (redirectUrl.isValid())
     m_redirectMappings[reply->url().resolved(redirectUrl)] = reply->url();
